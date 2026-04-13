@@ -7,6 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
@@ -20,19 +23,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.yuezhikong.todo.ui.add.AddScreen
 import org.yuezhikong.todo.ui.home.CalendarScreen
 import org.yuezhikong.todo.ui.home.HomeScreen
 import org.yuezhikong.todo.ui.home.UserScreen
 import org.yuezhikong.todo.ui.theme.ToDoTheme
 
 data object Home
-data object Calendar
-data object User
+data object Add
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,71 +52,77 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Preview
+sealed class Tab(val title: String, val icon: ImageVector) {
+    object Home : Tab("首页", Icons.Default.Home)
+    object Calendar : Tab("日历", Icons.Default.DateRange)
+    object User : Tab("我的", Icons.Default.Person)
+}
+
+val tabs = listOf(Tab.Home, Tab.Calendar, Tab.User)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToDo() {
     val backStack = remember { mutableStateListOf<Any>(Home) }
-    val showBottomBar = backStack.lastOrNull() in setOf(Home, Calendar, User)
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        modifier = Modifier
+            .fillMaxSize(),
+        entryProvider = { key ->
+            when (key) {
+                Home -> NavEntry(key) {
+                    MainPage(backStack)
+                }
+
+                Add -> NavEntry(key) {
+                    AddScreen()
+                }
+                else -> error("Unknown key")
+            }
+        }
+    )
+}
+
+@Composable
+fun MainPage(backStack: SnapshotStateList<Any>) {
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
+
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = { BottomBar(showBottomBar, backStack.last().toString(), backStack) },
-    ) { paddingValues ->
-        NavDisplay(
-            backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
+        bottomBar = { BottomBar(pagerState, scope) }
+    ){ paddingValues ->
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            entryProvider = { key ->
-                when (key) {
-                    is Home -> NavEntry(key) {
-                        HomeScreen()
-                    }
-                    is Calendar -> NavEntry(key) {
-                        CalendarScreen()
-                    }
-                    is User -> NavEntry(key) {
-                        UserScreen()
-                    }
-                    else -> NavEntry(Unit) { Text("Unknown route") }
-                }
+                .padding(paddingValues)
+        ) { page ->
+            when (tabs[page]) {
+                Tab.Home -> HomeScreen(backStack)
+                Tab.Calendar -> CalendarScreen()
+                Tab.User -> UserScreen()
             }
-        )
+        }
     }
 }
 
 @Composable
-fun BottomBar(showBottomBar: Boolean, currentRoute: String, backStack: SnapshotStateList<Any>) {
-    if (showBottomBar) {
-        NavigationBar {
+fun BottomBar(pagerState: PagerState, scope: CoroutineScope) {
+    NavigationBar {
+        tabs.forEachIndexed { index, tab ->
             NavigationBarItem(
-                selected = currentRoute == "Home",
+                selected = pagerState.currentPage == index,
                 onClick = {
-                    backStack.removeLastOrNull()
-                    backStack.add(Home)
-                },
-                icon = { Icon(Icons.Filled.Home, null) },
-                label = { Text("首页") }
-            )
-            NavigationBarItem(
-                selected = currentRoute == "Calendar",
-                onClick = {
-                    backStack.removeLastOrNull()
-                    backStack.add(Calendar)
-                },
-                icon = { Icon(Icons.Filled.DateRange, null) },
-                label = { Text("日历") }
-            )
-            NavigationBarItem(
-                selected = currentRoute == "User",
-                onClick = {
-                    backStack.removeLastOrNull()
-                    backStack.add(User)
-                },
-                icon = { Icon(Icons.Filled.Person, null) },
-                label = { Text("我的") }
+                    scope.launch {
+                        pagerState.animateScrollToPage(index)
+                    }
+                          },
+                icon = { Icon(tab.icon, contentDescription = tab.title) },
+                label = { Text(tab.title) }
             )
         }
     }
