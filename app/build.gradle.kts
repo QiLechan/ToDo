@@ -62,4 +62,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.material3.adaptive.navigation3)
     implementation(libs.kotlinx.serialization.core)
+    //implementation("io.github.boguszpawlowski.composecalendar:composecalendar:1.4.0")
+    //implementation("io.github.boguszpawlowski.composecalendar:kotlinx-datetime:1.4.0")
 }
