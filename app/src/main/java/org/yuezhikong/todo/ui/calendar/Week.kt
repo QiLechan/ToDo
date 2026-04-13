@@ -1,27 +1,22 @@
 package org.yuezhikong.todo.ui.calendar
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 
-@Preview
 @Composable
-fun Week() {
-    val start = 1
-    val end = 7
-    val isSelected = false
-    Row {
+fun Week(start: Int, end: Int, weekday: Int, selected: Int) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        for (i in 1 until weekday) {
+            Day(0, false, Modifier.weight(1f))
+        }
         for (day in start..end) {
-            if (day == 3) {
-                Day(day, true)
-            } else
-            Day(day, isSelected)
-            Spacer(modifier = Modifier.width(1.dp))
+            Day(day, day == selected, Modifier.weight(1f))
+        }
+        val count = (weekday - 1) + (end - start + 1)
+        for (i in count until 7) {
+            Day(0, false, Modifier.weight(1f))
         }
     }
 }

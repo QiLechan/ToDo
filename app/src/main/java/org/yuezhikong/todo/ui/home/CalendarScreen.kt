@@ -7,6 +7,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.yuezhikong.todo.ui.calendar.Month
 
 @Composable
 fun CalendarScreen() {
@@ -23,7 +24,8 @@ fun CalendarScreen() {
                     .padding(16.dp)
                     .fillMaxSize()
             ) {
-
+                val today = java.time.LocalDate.now()
+                Month(today.year, today.month, today.dayOfMonth)
             }
         }
     }
