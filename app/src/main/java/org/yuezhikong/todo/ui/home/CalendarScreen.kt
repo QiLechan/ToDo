@@ -12,6 +12,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -29,23 +30,27 @@ import java.time.LocalDate
 fun CalendarScreen() {
     var selectedDay by remember { mutableIntStateOf(0) }
     val dummyPageCount = Int.MAX_VALUE
+    val centerPage = dummyPageCount / 2
     val today = LocalDate.now()
     selectedDay = if (selectedDay == 0) today.dayOfMonth else selectedDay
-    val year = today.year
-    val month = today.month
     val pagerState = rememberPagerState(
         pageCount = { dummyPageCount },
-        initialPage = dummyPageCount / 2
+        initialPage = centerPage
     )
+    val currentDisplayDate by remember(today, pagerState) {
+        derivedStateOf {
+            today.plusMonths((pagerState.currentPage - centerPage).toLong())
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "${year}年${month.value}月") },
+                title = { Text(text = "${currentDisplayDate.year}年${currentDisplayDate.monthValue}月") },
             )
         }
-    ) {paddingValues ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -61,9 +66,10 @@ fun CalendarScreen() {
                     state = pagerState,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(300.dp)
                 ) { page ->
                     Month(
-                        today.plusMonths(page - dummyPageCount / 2L),
+                        today.plusMonths(page - centerPage.toLong()),
                         selectedDay,
                         onValueChange = { selectedDay = it }
                     )

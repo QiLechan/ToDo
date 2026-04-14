@@ -2,10 +2,12 @@ package org.yuezhikong.todo.ui.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
@@ -18,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
-import java.time.Month
 import java.time.Year
 
 @Composable
@@ -27,7 +28,10 @@ fun Month(
     selected: Int = 0,
     onValueChange: (Int) -> Unit = {}
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
         val year = today.year
         val month = today.month
         val firstDay = LocalDate.of(year, month, 1).dayOfWeek.value
@@ -44,14 +48,14 @@ fun Month(
 @Composable
 fun Week(start: Int, end: Int, weekday: Int, selected: Int, onValueChange: (Int) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth()) {
-        for (i in 1 until weekday) {
+        repeat(weekday - 1) {
             Day(0, selected, Modifier.weight(1f), onValueChange)
         }
         for (day in start..end) {
             Day(day, selected, Modifier.weight(1f), onValueChange)
         }
         val count = (weekday - 1) + (end - start + 1)
-        for (i in count until 7) {
+        repeat(7 - count) {
             Day(0, selected, Modifier.weight(1f), onValueChange)
         }
     }
