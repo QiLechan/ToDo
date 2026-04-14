@@ -38,7 +38,7 @@ fun Month(
         val days = month.length(Year.of(year).isLeap)
         Week(1, 7 - firstDay + 1, firstDay, selected, onValueChange)
         var day = 8 - firstDay
-        while (day <= days) {
+        while (day < days) {
             Week(day + 1, minOf(day + 7, days), 1, selected, onValueChange)
             day += 7
         }
