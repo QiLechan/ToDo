@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.yuezhikong.todo.ui.widget.ChooseWidget
 import org.yuezhikong.todo.ui.widget.DatePickerWidget
 import org.yuezhikong.todo.ui.widget.SwitchWidget
 
@@ -39,6 +40,7 @@ import org.yuezhikong.todo.ui.widget.SwitchWidget
 fun AddScreen() {
     var name by remember { mutableStateOf("") }
     var allDay by remember { mutableStateOf(false) }
+    var alarm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -75,9 +77,50 @@ fun AddScreen() {
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     SwitchWidget(title = "全天事件", checked = allDay, onCheckedChange = { allDay = it})
-                    DatePickerWidget()
+                    DatePickerWidget("开始时间")
+                    DatePickerWidget("结束时间")
+                }
+                Card(
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ){
+                    ChooseWidget("提醒") {
+                        NoticeSettings()
+                    }
+                    SwitchWidget(title = "闹钟提醒", checked = alarm, onCheckedChange = { alarm = it })
+                    if (alarm) {
+                        DatePickerWidget("提醒时间")
+                    }
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun NoticeSettings() {
+    Column {
+        ListItem(
+            headlineContent = { Text("不提醒") },
+        )
+        HorizontalDivider()
+        ListItem(
+            headlineContent = { Text("提前5分钟") },
+        )
+        HorizontalDivider()
+        ListItem(
+            headlineContent = { Text("提前15分钟") },
+        )
+        HorizontalDivider()
+        ListItem(
+            headlineContent = { Text("提前30分钟") },
+        )
+        HorizontalDivider()
+        ListItem(
+            headlineContent = { Text("提前1小时") },
+        )
     }
 }
