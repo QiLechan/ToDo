@@ -3,13 +3,13 @@ package org.yuezhikong.todo.ui.add
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -20,33 +20,58 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.yuezhikong.todo.database.AppDatabase
+import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
+import org.yuezhikong.todo.database.Schedule
 import org.yuezhikong.todo.ui.widget.ChooseWidget
 import org.yuezhikong.todo.ui.widget.DatePickerWidget
 import org.yuezhikong.todo.ui.widget.SwitchWidget
 
-@Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddScreen() {
+fun AddScreen(backStack: SnapshotStateList<Any>) {
     var name by remember { mutableStateOf("") }
     var allDay by remember { mutableStateOf(false) }
     var alarm by remember { mutableStateOf(false) }
     var noticeTimes = remember { mutableStateListOf(1) }
+    var start by remember { mutableStateOf("") }
+    var end by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val db = remember { getDatabase(context) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = "添加日程") },
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    scope.launch {
+                        saveToDo(db, name, allDay, alarm, start, end, description, noticeTimes)
+                    }
+                    backStack.removeLastOrNull()
+                }
+            ) {
+                Icon(Icons.Filled.Check, "添加")
+            }
         }
     ) { paddingValues ->
         Column(
@@ -61,9 +86,7 @@ fun AddScreen() {
                     onValueChange = { name = it },
                     label = { Text("标题") },
                     singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
+                    modifier = Modifier.fillMaxWidth(),//.height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
@@ -79,8 +102,8 @@ fun AddScreen() {
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     SwitchWidget(title = "全天事件", checked = allDay, onCheckedChange = { allDay = it})
-                    DatePickerWidget("开始时间")
-                    DatePickerWidget("结束时间")
+                    DatePickerWidget("开始时间", onDateSelected = { start = it })
+                    DatePickerWidget("结束时间", onDateSelected = { end = it })
                 }
                 Card(
                     modifier = Modifier
@@ -96,7 +119,7 @@ fun AddScreen() {
                                     noticeTimes.add(0)
                                 }
                                 else {
-                                    if (it in noticeTimes) {
+                                    if (it in noticeTimes){
                                         noticeTimes.remove(it)
                                     } else
                                         noticeTimes.remove(0)
@@ -112,6 +135,21 @@ fun AddScreen() {
                             onCheckedChange = { alarm = it })
                     }
                 }
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("描述") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        errorIndicatorColor = Color.Transparent
+                    ),
+                )
             }
         }
     }
@@ -156,5 +194,19 @@ fun OptionItem(
         trailingContent = {
             if (selected) { Icon(Icons.Default.Check, contentDescription = "Selected") }
         },
+    )
+}
+
+suspend fun saveToDo(db: AppDatabase, name: String, allDay: Boolean, alarm: Boolean, start: String, end: String, description: String, noticeTimes: List<Int>) {
+    db.scheduleDao().insert(
+        schedule = Schedule(
+            title = name,
+            description = description,
+            start = start,
+            end = end,
+            allday = allDay,
+            alarm = alarm,
+            noticeTimes = noticeTimes.joinToString(",")
+        )
     )
 }

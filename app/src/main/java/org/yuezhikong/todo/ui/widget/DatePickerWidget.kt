@@ -83,7 +83,8 @@ fun convertMillisToDate(millis: Long): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerWidget(
-    title: String
+    title: String,
+    onDateSelected: (String) -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -98,6 +99,7 @@ fun DatePickerWidget(
 
     LaunchedEffect(selectedDate, selectedTime) {
         dateInput = selectedDate + selectedTime
+        onDateSelected(dateInput)
     }
 
     LaunchedEffect(dateInput) {

@@ -77,7 +77,7 @@ fun ToDo() {
                 }
 
                 Add -> NavEntry(key) {
-                    AddScreen()
+                    AddScreen(backStack)
                 }
                 else -> error("Unknown key")
             }

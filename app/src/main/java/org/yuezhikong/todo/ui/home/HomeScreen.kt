@@ -20,18 +20,25 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
 import org.yuezhikong.todo.Add
+import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
+import org.yuezhikong.todo.database.Schedule
 
 data class ToDo(val id: String)
 
@@ -70,13 +77,35 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
                             scope.launch { drawerState.close() }
                         }
                     )
+                    NavigationDrawerItem(
+                        label = { Text(text = "全部") },
+                        selected = HomeStack.lastOrNull()?.id == "3",
+                        onClick = {
+                            HomeStack.removeLastOrNull()
+                            HomeStack.add(ToDo("3"))
+                            scope.launch { drawerState.close() }
+                        }
+                    )
                 }
         }
     ) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("今天") },
+                    title = {
+                        if (HomeStack.isNotEmpty()) {
+                            Text(
+                                text = when (HomeStack.last().id) {
+                                    "1" -> "今天"
+                                    "2" -> "明天"
+                                    "3" -> "全部"
+                                    else -> error("Unknown id: ${HomeStack.last().id}")
+                                }
+                            )
+                        } else {
+                            Text("ToDo")
+                        }
+                    },
                     navigationIcon = {
                         IconButton(
                             onClick = {
@@ -114,6 +143,10 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
                         "2" -> NavEntry(key) {
                             Tomorrow()
                         }
+
+                        "3" -> NavEntry(key) {
+                            All()
+                        }
                         else -> error("Unknown key: ${key.id}")
                     }
                 }
@@ -130,4 +163,16 @@ fun Today() {
 @Composable
 fun Tomorrow() {
     Text("Tomorrow")
+}
+
+@Composable
+fun All(){
+    val context = LocalContext.current
+    val db = remember { getDatabase(context) }
+    var schedule by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        schedule = db.scheduleDao().getAll().toString()
+    }
+    Text(schedule)
 }
