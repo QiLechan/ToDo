@@ -119,11 +119,12 @@ fun AddScreen(backStack: SnapshotStateList<Any>) {
                                     noticeTimes.add(0)
                                 }
                                 else {
-                                    if (it in noticeTimes){
+                                    if (it in noticeTimes) {
                                         noticeTimes.remove(it)
-                                    } else
+                                    } else {
                                         noticeTimes.remove(0)
                                         noticeTimes.add(it)
+                                    }
                                 }
                                          },
                             current = noticeTimes)
