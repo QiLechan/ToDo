@@ -1,8 +1,11 @@
 package org.yuezhikong.todo.ui.home
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
@@ -35,10 +38,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import org.yuezhikong.todo.Add
 import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
 import org.yuezhikong.todo.database.Schedule
+import org.yuezhikong.todo.ui.widget.ScheduleWidget
+import java.sql.Time
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 data class ToDo(val id: String)
 
@@ -48,6 +57,25 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val HomeStack = remember { mutableStateListOf<ToDo>(ToDo("1")) }
+    val context = LocalContext.current
+    val db = remember { getDatabase(context) }
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1)
+
+    var todayList by remember { mutableStateOf<List<Schedule>>(emptyList()) }
+    var tomorrowList by remember { mutableStateOf<List<Schedule>>(emptyList()) }
+    var schedule by remember { mutableStateOf<List<Schedule>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        schedule = db.scheduleDao().getAll()
+        schedule = schedule.sortedBy { StringToTime(it.start) }
+        for (item in schedule){
+            when (StringToTime(item.start).toLocalDate()) {
+                today -> todayList = todayList + item
+                tomorrow -> tomorrowList = tomorrowList + item
+            }
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -137,15 +165,15 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
                 entryProvider = { key ->
                     when (key.id) {
                         "1" -> NavEntry(key) {
-                            Today()
+                            Today(todayList)
                         }
 
                         "2" -> NavEntry(key) {
-                            Tomorrow()
+                            Tomorrow(tomorrowList)
                         }
 
                         "3" -> NavEntry(key) {
-                            All()
+                            All(schedule)
                         }
                         else -> error("Unknown key: ${key.id}")
                     }
@@ -156,23 +184,36 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
 }
 
 @Composable
-fun Today() {
-    Text("Today")
-}
-
-@Composable
-fun Tomorrow() {
-    Text("Tomorrow")
-}
-
-@Composable
-fun All(){
-    val context = LocalContext.current
-    val db = remember { getDatabase(context) }
-    var schedule by remember { mutableStateOf("") }
-
-    LaunchedEffect(Unit) {
-        schedule = db.scheduleDao().getAll().toString()
+fun Today(schedule: List<Schedule>) {
+    LazyColumn {
+        items(schedule) { item ->
+            ScheduleWidget(item.title, item.start)
+        }
     }
-    Text(schedule)
+}
+
+@Composable
+fun Tomorrow(schedule: List<Schedule>) {
+    LazyColumn {
+        items(schedule) { item ->
+            ScheduleWidget(item.title, item.start)
+        }
+    }
+}
+
+@Composable
+fun All(schedule: List<Schedule>){
+    //val map = schedule.associateBy { it.id }
+
+    LazyColumn {
+        items(schedule) { item ->
+            ScheduleWidget(item.title, item.start)
+        }
+    }
+}
+
+fun StringToTime(str: String): LocalDateTime {
+    val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
+    val dateTime = LocalDateTime.parse(str, formatter)
+    return dateTime
 }
