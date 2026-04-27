@@ -1,7 +1,9 @@
 package org.yuezhikong.todo.ui.widget
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,42 +22,36 @@ import androidx.compose.ui.unit.dp
 import org.yuezhikong.todo.ui.schedule.ScheduleInfoScreen
 
 @Composable
-fun ScheduleWidget(title: String, time: String, id: Int) {
-    var showDetails by remember { mutableStateOf(false) }
+fun ScheduleWidget(title: String, time: String, id: Int, sharedTransitionScope: SharedTransitionScope,
+                   animatedVisibilityScope: AnimatedVisibilityScope, onSelected: () -> Unit) {
     val format_time = time.substring(0, 4) + "年" + time.substring(4, 6) + "月" + time.substring(6, 8) + "日" + time.substring(8, 10) + ":" + time.substring(10, 12)
 
-    SharedTransitionLayout {
-        AnimatedContent(targetState = showDetails) { inDetails ->
-            if (inDetails) {
-                ScheduleInfoScreen(this@AnimatedContent)
-            } else {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                        .height(72.dp)
-                        .clickable {
-                            showDetails = true
-                        }
-                        .sharedElement(
-                            sharedContentState = rememberSharedContentState(key = "card"),
-                            animatedVisibilityScope = this@AnimatedContent,
-                        )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            text = title,
-                        )
-                        Text(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            text = format_time,
-                        )
-                    }
+    with(sharedTransitionScope) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .height(72.dp)
+                .clickable {
+                    onSelected()
                 }
+                .sharedElement(
+                    sharedContentState = rememberSharedContentState(key = "card"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Text(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    text = title,
+                )
+                Text(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    text = format_time,
+                )
             }
         }
     }

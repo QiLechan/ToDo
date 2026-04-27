@@ -1,8 +1,11 @@
 package org.yuezhikong.todo.ui.home
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,22 +37,32 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
-import com.google.gson.Gson
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import org.yuezhikong.todo.Add
 import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
 import org.yuezhikong.todo.database.Schedule
+import org.yuezhikong.todo.ui.schedule.ScheduleInfoScreen
 import org.yuezhikong.todo.ui.widget.ScheduleWidget
-import java.sql.Time
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 data class ToDo(val id: String)
+
+@Serializable
+data object HomeRoute : NavKey
+
+@Serializable
+data class Detail(val id: String) : NavKey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -165,15 +178,15 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
                 entryProvider = { key ->
                     when (key.id) {
                         "1" -> NavEntry(key) {
-                            Today(todayList)
+                            ScheduleList(todayList)
                         }
 
                         "2" -> NavEntry(key) {
-                            Tomorrow(tomorrowList)
+                            ScheduleList(tomorrowList)
                         }
 
                         "3" -> NavEntry(key) {
-                            All(schedule)
+                            ScheduleList(schedule)
                         }
                         else -> error("Unknown key: ${key.id}")
                     }
@@ -184,29 +197,42 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
 }
 
 @Composable
-fun Today(schedule: List<Schedule>) {
+fun LazyColumnSchedule(
+    schedule: List<Schedule>,
+    backStack: NavBackStack<NavKey>,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+) {
     LazyColumn {
         items(schedule) { item ->
-            ScheduleWidget(item.title, item.start, item.id)
+            ScheduleWidget(item.title, item.start, item.id, sharedTransitionScope, animatedVisibilityScope) { backStack.add(Detail(item.id.toString())) }
         }
     }
 }
 
 @Composable
-fun Tomorrow(schedule: List<Schedule>) {
-    LazyColumn {
-        items(schedule) { item ->
-            ScheduleWidget(item.title, item.start, item.id)
-        }
-    }
-}
+fun ScheduleList(schedule: List<Schedule>) {
+    val backStack = rememberNavBackStack(HomeRoute)
 
-@Composable
-fun All(schedule: List<Schedule>){
-    LazyColumn {
-        items(schedule) { item ->
-            ScheduleWidget(item.title, item.start, item.id)
-        }
+    SharedTransitionLayout {
+        NavDisplay(
+            modifier = Modifier.safeDrawingPadding(),
+            backStack = backStack,
+            entryProvider = entryProvider {
+                entry<HomeRoute> {
+                    LazyColumnSchedule(schedule, backStack, this@SharedTransitionLayout, LocalNavAnimatedContentScope.current)
+                }
+                entry<Detail> {
+                    ScheduleInfoScreen(
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                        onBackPressed = {
+                            backStack.removeLastOrNull()
+                        },
+                    )
+                }
+            }
+        )
     }
 }
 
