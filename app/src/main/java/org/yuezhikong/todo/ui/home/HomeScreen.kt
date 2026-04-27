@@ -187,7 +187,7 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
 fun Today(schedule: List<Schedule>) {
     LazyColumn {
         items(schedule) { item ->
-            ScheduleWidget(item.title, item.start)
+            ScheduleWidget(item.title, item.start, item.id)
         }
     }
 }
@@ -196,18 +196,16 @@ fun Today(schedule: List<Schedule>) {
 fun Tomorrow(schedule: List<Schedule>) {
     LazyColumn {
         items(schedule) { item ->
-            ScheduleWidget(item.title, item.start)
+            ScheduleWidget(item.title, item.start, item.id)
         }
     }
 }
 
 @Composable
 fun All(schedule: List<Schedule>){
-    //val map = schedule.associateBy { it.id }
-
     LazyColumn {
         items(schedule) { item ->
-            ScheduleWidget(item.title, item.start)
+            ScheduleWidget(item.title, item.start, item.id)
         }
     }
 }
