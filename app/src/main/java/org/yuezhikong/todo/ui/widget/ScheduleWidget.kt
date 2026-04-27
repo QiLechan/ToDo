@@ -1,8 +1,6 @@
 package org.yuezhikong.todo.ui.widget
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -13,17 +11,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.yuezhikong.todo.ui.schedule.ScheduleInfoScreen
 
 @Composable
-fun ScheduleWidget(title: String, time: String, id: Int, sharedTransitionScope: SharedTransitionScope,
-                   animatedVisibilityScope: AnimatedVisibilityScope, onSelected: () -> Unit) {
+fun ScheduleWidget(title: String,
+                   time: String,
+                   id: Int,
+                   sharedTransitionScope: SharedTransitionScope,
+                   animatedVisibilityScope: AnimatedVisibilityScope,
+                   onSelected: () -> Unit
+) {
     val format_time = time.substring(0, 4) + "年" + time.substring(4, 6) + "月" + time.substring(6, 8) + "日" + time.substring(8, 10) + ":" + time.substring(10, 12)
 
     with(sharedTransitionScope) {
@@ -36,7 +34,7 @@ fun ScheduleWidget(title: String, time: String, id: Int, sharedTransitionScope: 
                     onSelected()
                 }
                 .sharedElement(
-                    sharedContentState = rememberSharedContentState(key = "card"),
+                    sharedContentState = rememberSharedContentState(key = "card-$id"),
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
         ) {

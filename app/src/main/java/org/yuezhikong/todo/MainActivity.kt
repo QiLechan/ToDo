@@ -4,6 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -21,14 +27,16 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -36,10 +44,12 @@ import org.yuezhikong.todo.ui.add.AddScreen
 import org.yuezhikong.todo.ui.home.CalendarScreen
 import org.yuezhikong.todo.ui.home.HomeScreen
 import org.yuezhikong.todo.ui.home.UserScreen
+import org.yuezhikong.todo.ui.schedule.ScheduleInfoScreen
 import org.yuezhikong.todo.ui.theme.ToDoTheme
 
 data object Home
 data object Add
+data class ScheduleDetail(val id: String)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,28 +75,58 @@ val tabs = listOf(Tab.Home, Tab.Calendar, Tab.User)
 @Composable
 fun ToDo() {
     val backStack = remember { mutableStateListOf<Any>(Home) }
-    NavDisplay(
-        backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
-        modifier = Modifier
-            .fillMaxSize(),
-        entryProvider = { key ->
-            when (key) {
-                Home -> NavEntry(key) {
-                    MainPage(backStack)
-                }
+    val selectedHomeFilter = rememberSaveable { mutableStateOf("1") }
+    SharedTransitionLayout {
+        NavDisplay(
+            backStack = backStack,
+            onBack = { backStack.removeLastOrNull() },
+            modifier = Modifier
+                .fillMaxSize(),
+            transitionSpec = {
+                EnterTransition.None togetherWith ExitTransition.None
+            },
+            popTransitionSpec = {
+                EnterTransition.None togetherWith ExitTransition.None
+            },
+            entryProvider = { key ->
+                when (key) {
+                    Home -> NavEntry(key) {
+                        MainPage(
+                            backStack = backStack,
+                            selectedHomeFilter = selectedHomeFilter.value,
+                            onHomeFilterChange = { selectedHomeFilter.value = it },
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                        )
+                    }
 
-                Add -> NavEntry(key) {
-                    AddScreen(backStack)
+                    Add -> NavEntry(key) {
+                        AddScreen(backStack)
+                    }
+
+                    is ScheduleDetail -> NavEntry(key) {
+                        ScheduleInfoScreen(
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                            scheduleId = key.id,
+                            onBackPressed = { backStack.removeLastOrNull() },
+                        )
+                    }
+                    else -> error("Unknown key")
                 }
-                else -> error("Unknown key")
             }
-        }
-    )
+        )
+    }
 }
 
 @Composable
-fun MainPage(backStack: SnapshotStateList<Any>) {
+fun MainPage(
+    backStack: SnapshotStateList<Any>,
+    selectedHomeFilter: String,
+    onHomeFilterChange: (String) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+) {
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
 
@@ -102,7 +142,13 @@ fun MainPage(backStack: SnapshotStateList<Any>) {
                 .padding(paddingValues)
         ) { page ->
             when (tabs[page]) {
-                Tab.Home -> HomeScreen(backStack)
+                Tab.Home -> HomeScreen(
+                    backStack = backStack,
+                    selectedHomeFilter = selectedHomeFilter,
+                    onHomeFilterChange = onHomeFilterChange,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
                 Tab.Calendar -> CalendarScreen()
                 Tab.User -> UserScreen()
             }

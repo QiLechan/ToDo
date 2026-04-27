@@ -1,11 +1,9 @@
 package org.yuezhikong.todo.ui.home
 
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,7 +26,6 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,38 +35,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
-import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import org.yuezhikong.todo.Add
+import org.yuezhikong.todo.ScheduleDetail
 import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
 import org.yuezhikong.todo.database.Schedule
-import org.yuezhikong.todo.ui.schedule.ScheduleInfoScreen
 import org.yuezhikong.todo.ui.widget.ScheduleWidget
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-data class ToDo(val id: String)
-
-@Serializable
-data object HomeRoute : NavKey
-
-@Serializable
-data class Detail(val id: String) : NavKey
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(backStack: SnapshotStateList<Any>) {
+fun HomeScreen(
+    backStack: SnapshotStateList<Any>,
+    selectedHomeFilter: String,
+    onHomeFilterChange: (String) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val HomeStack = remember { mutableStateListOf<ToDo>(ToDo("1")) }
     val context = LocalContext.current
     val db = remember { getDatabase(context) }
     val today = LocalDate.now()
@@ -102,28 +88,25 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
                     HorizontalDivider()
                     NavigationDrawerItem(
                         label = { Text(text = "今天") },
-                        selected = HomeStack.lastOrNull()?.id == "1",
+                        selected = selectedHomeFilter == "1",
                         onClick = {
-                            HomeStack.removeLastOrNull()
-                            HomeStack.add(ToDo("1"))
+                            onHomeFilterChange("1")
                             scope.launch { drawerState.close() }
                         }
                     )
                     NavigationDrawerItem(
                         label = { Text(text = "明天") },
-                        selected = HomeStack.lastOrNull()?.id == "2",
+                        selected = selectedHomeFilter == "2",
                         onClick = {
-                            HomeStack.removeLastOrNull()
-                            HomeStack.add(ToDo("2"))
+                            onHomeFilterChange("2")
                             scope.launch { drawerState.close() }
                         }
                     )
                     NavigationDrawerItem(
                         label = { Text(text = "全部") },
-                        selected = HomeStack.lastOrNull()?.id == "3",
+                        selected = selectedHomeFilter == "3",
                         onClick = {
-                            HomeStack.removeLastOrNull()
-                            HomeStack.add(ToDo("3"))
+                            onHomeFilterChange("3")
                             scope.launch { drawerState.close() }
                         }
                     )
@@ -134,18 +117,14 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
             topBar = {
                 TopAppBar(
                     title = {
-                        if (HomeStack.isNotEmpty()) {
-                            Text(
-                                text = when (HomeStack.last().id) {
-                                    "1" -> "今天"
-                                    "2" -> "明天"
-                                    "3" -> "全部"
-                                    else -> error("Unknown id: ${HomeStack.last().id}")
-                                }
-                            )
-                        } else {
-                            Text("ToDo")
-                        }
+                        Text(
+                            text = when (selectedHomeFilter) {
+                                "1" -> "今天"
+                                "2" -> "明天"
+                                "3" -> "全部"
+                                else -> error("Unknown id: $selectedHomeFilter")
+                            }
+                        )
                     },
                     navigationIcon = {
                         IconButton(
@@ -169,28 +148,20 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
             }
         )
         { paddingValues ->
-            NavDisplay(
-                backStack = HomeStack,
-                onBack = { HomeStack.removeLastOrNull() },
+            val displayList = when (selectedHomeFilter) {
+                "1" -> todayList
+                "2" -> tomorrowList
+                "3" -> schedule
+                else -> error("Unknown id: $selectedHomeFilter")
+            }
+            ScheduleList(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                entryProvider = { key ->
-                    when (key.id) {
-                        "1" -> NavEntry(key) {
-                            ScheduleList(todayList)
-                        }
-
-                        "2" -> NavEntry(key) {
-                            ScheduleList(tomorrowList)
-                        }
-
-                        "3" -> NavEntry(key) {
-                            ScheduleList(schedule)
-                        }
-                        else -> error("Unknown key: ${key.id}")
-                    }
-                }
+                schedule = displayList,
+                onOpenDetail = { scheduleId -> backStack.add(ScheduleDetail(scheduleId)) },
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
             )
         }
     }
@@ -198,42 +169,36 @@ fun HomeScreen(backStack: SnapshotStateList<Any>) {
 
 @Composable
 fun LazyColumnSchedule(
+    modifier: Modifier = Modifier,
     schedule: List<Schedule>,
-    backStack: NavBackStack<NavKey>,
+    onOpenDetail: (String) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
-    LazyColumn {
-        items(schedule) { item ->
-            ScheduleWidget(item.title, item.start, item.id, sharedTransitionScope, animatedVisibilityScope) { backStack.add(Detail(item.id.toString())) }
+    LazyColumn(modifier = modifier) {
+        items(items = schedule, key = { it.id }) { item ->
+            ScheduleWidget(item.title, item.start, item.id, sharedTransitionScope, animatedVisibilityScope) {
+                onOpenDetail(item.id.toString())
+            }
         }
     }
 }
 
 @Composable
-fun ScheduleList(schedule: List<Schedule>) {
-    val backStack = rememberNavBackStack(HomeRoute)
-
-    SharedTransitionLayout {
-        NavDisplay(
-            modifier = Modifier.safeDrawingPadding(),
-            backStack = backStack,
-            entryProvider = entryProvider {
-                entry<HomeRoute> {
-                    LazyColumnSchedule(schedule, backStack, this@SharedTransitionLayout, LocalNavAnimatedContentScope.current)
-                }
-                entry<Detail> {
-                    ScheduleInfoScreen(
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-                        onBackPressed = {
-                            backStack.removeLastOrNull()
-                        },
-                    )
-                }
-            }
-        )
-    }
+fun ScheduleList(
+    modifier: Modifier = Modifier,
+    schedule: List<Schedule>,
+    onOpenDetail: (String) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+) {
+    LazyColumnSchedule(
+        modifier = modifier,
+        schedule = schedule,
+        onOpenDetail = onOpenDetail,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
+    )
 }
 
 fun StringToTime(str: String): LocalDateTime {
