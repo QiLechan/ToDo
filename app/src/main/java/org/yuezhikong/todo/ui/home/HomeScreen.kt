@@ -141,12 +141,19 @@ fun HomeScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = {
-                        backStack.add(Add)
+                with(sharedTransitionScope) {
+                    FloatingActionButton(
+                        onClick = {
+                            backStack.add(Add)
+                        },
+                        modifier = Modifier
+                            .sharedElement(
+                                sharedContentState = rememberSharedContentState(key = "add-button"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                    ) {
+                        Icon(Icons.Filled.Add, "添加")
                     }
-                ) {
-                    Icon(Icons.Filled.Add, "添加")
                 }
             }
         )

@@ -6,11 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -92,15 +94,16 @@ fun ToDo() {
             backStack = backStack,
             onBack = { backStack.removeLastOrNull() },
             modifier = Modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
             transitionSpec = {
-                EnterTransition.None togetherWith ExitTransition.None
+                fadeIn() togetherWith fadeOut()
             },
             popTransitionSpec = {
-                EnterTransition.None togetherWith ExitTransition.None
+                fadeIn() togetherWith fadeOut()
             },
             predictivePopTransitionSpec = {
-                EnterTransition.None togetherWith ExitTransition.None
+                fadeIn() togetherWith fadeOut()
             },
             entryProvider = { key ->
                 when (key) {
@@ -115,7 +118,11 @@ fun ToDo() {
                     }
 
                     Add -> NavEntry(key) {
-                        AddScreen(backStack)
+                        AddScreen(
+                            backStack,
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                        )
                     }
 
                     is ScheduleDetail -> NavEntry(key) {

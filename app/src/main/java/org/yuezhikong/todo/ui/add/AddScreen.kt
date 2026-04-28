@@ -1,5 +1,7 @@
 package org.yuezhikong.todo.ui.add
 
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +22,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,13 +31,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.yuezhikong.todo.DBViewModel
 import org.yuezhikong.todo.database.AppDatabase
-import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
 import org.yuezhikong.todo.database.Schedule
 import org.yuezhikong.todo.ui.widget.ChooseWidget
 import org.yuezhikong.todo.ui.widget.DatePickerWidget
@@ -44,7 +43,11 @@ import org.yuezhikong.todo.ui.widget.SwitchWidget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddScreen(backStack: SnapshotStateList<Any>) {
+fun AddScreen(
+    backStack: SnapshotStateList<Any>,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope
+) {
     var name by remember { mutableStateOf("") }
     var allDay by remember { mutableStateOf(false) }
     var alarm by remember { mutableStateOf(false) }
@@ -65,15 +68,22 @@ fun AddScreen(backStack: SnapshotStateList<Any>) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    scope.launch {
-                        saveToDo(db, name, allDay, alarm, start, end, description, noticeTimes)
-                    }
-                    backStack.removeLastOrNull()
+            with(sharedTransitionScope) {
+                FloatingActionButton(
+                    onClick = {
+                        scope.launch {
+                            saveToDo(db, name, allDay, alarm, start, end, description, noticeTimes)
+                        }
+                        backStack.removeLastOrNull()
+                    },
+                    modifier = Modifier
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "add-button"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                        )
+                ) {
+                    Icon(Icons.Filled.Check, "添加")
                 }
-            ) {
-                Icon(Icons.Filled.Check, "添加")
             }
         }
     ) { paddingValues ->
