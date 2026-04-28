@@ -178,7 +178,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun LazyColumnSchedule(
+fun ScheduleList(
     modifier: Modifier = Modifier,
     schedule: List<Schedule>,
     onOpenDetail: (String) -> Unit,
@@ -192,23 +192,6 @@ fun LazyColumnSchedule(
             }
         }
     }
-}
-
-@Composable
-fun ScheduleList(
-    modifier: Modifier = Modifier,
-    schedule: List<Schedule>,
-    onOpenDetail: (String) -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-) {
-    LazyColumnSchedule(
-        modifier = modifier,
-        schedule = schedule,
-        onOpenDetail = onOpenDetail,
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
-    )
 }
 
 fun StringToTime(str: String): LocalDateTime {
