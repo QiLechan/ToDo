@@ -35,8 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.yuezhikong.todo.Add
+import org.yuezhikong.todo.DBViewModel
 import org.yuezhikong.todo.ScheduleDetail
 import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
 import org.yuezhikong.todo.database.Schedule
@@ -64,9 +66,10 @@ fun HomeScreen(
     var todayList by remember { mutableStateOf<List<Schedule>>(emptyList()) }
     var tomorrowList by remember { mutableStateOf<List<Schedule>>(emptyList()) }
     var schedule by remember { mutableStateOf<List<Schedule>>(emptyList()) }
+    val dbvm: DBViewModel = viewModel()
 
     LaunchedEffect(Unit) {
-        schedule = db.scheduleDao().getAll()
+        schedule = dbvm.getAllSchedules()
         schedule = schedule.sortedBy { StringToTime(it.start) }
         for (item in schedule){
             when (StringToTime(item.start).toLocalDate()) {

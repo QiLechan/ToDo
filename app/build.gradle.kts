@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -72,6 +73,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.gson)
     implementation(libs.androidx.compose.animation)
+    implementation("com.google.dagger:hilt-android:2.59.2")
+    ksp("com.google.dagger:hilt-android-compiler:2.59.2")
     //implementation("io.github.boguszpawlowski.composecalendar:composecalendar:1.4.0")
     //implementation("io.github.boguszpawlowski.composecalendar:kotlinx-datetime:1.4.0")
 }

@@ -1,5 +1,6 @@
 package org.yuezhikong.todo
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,11 +36,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.AndroidViewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.yuezhikong.todo.database.AppDatabase
 import org.yuezhikong.todo.ui.add.AddScreen
 import org.yuezhikong.todo.ui.home.CalendarScreen
 import org.yuezhikong.todo.ui.home.HomeScreen
@@ -69,6 +72,14 @@ sealed class Tab(val title: String, val icon: ImageVector) {
     object User : Tab("我的", Icons.Default.Person)
 }
 
+class DBViewModel(application: Application) : AndroidViewModel(application) {
+    private val db = AppDatabase.getDatabase(application)
+
+    fun getDataBase() = db
+
+    suspend fun getAllSchedules() = db.scheduleDao().getAll()
+}
+
 val tabs = listOf(Tab.Home, Tab.Calendar, Tab.User)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,6 +97,9 @@ fun ToDo() {
                 EnterTransition.None togetherWith ExitTransition.None
             },
             popTransitionSpec = {
+                EnterTransition.None togetherWith ExitTransition.None
+            },
+            predictivePopTransitionSpec = {
                 EnterTransition.None togetherWith ExitTransition.None
             },
             entryProvider = { key ->

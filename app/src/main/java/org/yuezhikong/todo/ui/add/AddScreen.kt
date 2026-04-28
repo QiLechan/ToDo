@@ -32,7 +32,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import org.yuezhikong.todo.DBViewModel
 import org.yuezhikong.todo.database.AppDatabase
 import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
 import org.yuezhikong.todo.database.Schedule
@@ -53,7 +55,8 @@ fun AddScreen(backStack: SnapshotStateList<Any>) {
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val db = remember { getDatabase(context) }
+    val dbvm: DBViewModel = viewModel()
+    val db = dbvm.getDataBase()
 
     Scaffold(
         topBar = {
