@@ -1,5 +1,5 @@
 [versions]
-agp = "9.1.1"
+agp = "9.2.0"
 animation = "1.10.0"
 composecalendar = "<latest-version>"
 gson = "2.14.0"

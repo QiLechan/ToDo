@@ -3,6 +3,7 @@ package org.yuezhikong.todo.ui.schedule
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideOutVertically
@@ -60,7 +61,6 @@ fun ScheduleInfoScreen(
     var schedule by remember { mutableStateOf<Schedule?>(null) }
     var alarmEnabled by remember { mutableStateOf(false) }
     var cardVisible by remember { mutableStateOf(true) }
-    var topBarVisible by remember { mutableStateOf(true) }
     var rowVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(scheduleId) {
@@ -71,13 +71,6 @@ fun ScheduleInfoScreen(
     with(sharedTransitionScope) {
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = topBarVisible,
-                    exit = slideOutVertically(
-                        targetOffsetY = { -it },
-                        animationSpec = tween(300)
-                    ) + fadeOut(animationSpec = tween(300))
-                ) {
                     TopAppBar(
                         title = { Text(text = "日程详情") },
                         navigationIcon = {
@@ -89,7 +82,6 @@ fun ScheduleInfoScreen(
                             }
                         }
                     )
-                }
             }
         ) { paddingValues ->
             Box(
@@ -99,14 +91,15 @@ fun ScheduleInfoScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
                 ) {
                     AnimatedVisibility(
                         visible = cardVisible,
                         exit = slideOutVertically(
                             targetOffsetY = { -it },
                             animationSpec = tween(300)
-                        ) + fadeOut(animationSpec = tween(300))
+                        ) + fadeOut(animationSpec = tween(300)),
                     ) {
                         Card(
                             modifier = Modifier
@@ -167,7 +160,7 @@ fun ScheduleInfoScreen(
                     AnimatedVisibility(
                         visible = rowVisible,
                         exit = slideOutVertically(
-                            targetOffsetY = { it },
+                            targetOffsetY = { it * 2 },
                             animationSpec = tween(300)
                         ) + fadeOut(animationSpec = tween(300))
                     ) {
@@ -189,7 +182,6 @@ fun ScheduleInfoScreen(
                                 onClick = {
                                     cardVisible = false
                                     rowVisible = false
-                                    topBarVisible = false
                                     scope.launch {
                                         delay(320)
                                         schedule?.let {
