@@ -43,11 +43,21 @@ fun ScheduleWidget(title: String,
                     .fillMaxSize()
             ) {
                 Text(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "title-$id"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                        ),
                     text = title,
                 )
                 Text(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "time-$id"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                        ),
                     text = format_time,
                 )
             }

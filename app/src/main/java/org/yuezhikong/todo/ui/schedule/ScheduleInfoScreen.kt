@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
@@ -77,17 +78,17 @@ fun ScheduleInfoScreen(
     with(sharedTransitionScope) {
         Scaffold(
             topBar = {
-                    TopAppBar(
-                        title = { Text(text = "日程详情") },
-                        navigationIcon = {
-                            IconButton(onClick = onBackPressed) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "返回"
-                                )
-                            }
+                TopAppBar(
+                    title = { Text(text = "日程详情") },
+                    navigationIcon = {
+                        IconButton(onClick = onBackPressed) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "返回"
+                            )
                         }
-                    )
+                    }
+                )
             }
         ) { paddingValues ->
             Box(
@@ -117,27 +118,56 @@ fun ScheduleInfoScreen(
                                     animatedVisibilityScope = animatedVisibilityScope,
                                 )
                         ) {
-                            if (contentVisible) {
-                                schedule?.let { sch ->
-                                    Column(
+//                            AnimatedVisibility(
+//                                visible = contentVisible,
+//                                enter = fadeIn(animationSpec = tween(300))
+//                            ) {
+                            schedule?.let { sch ->
+                                val format_time =
+                                    sch.start.substring(0, 4) + "年" + sch.start.substring(
+                                        4,
+                                        6
+                                    ) + "月" + sch.start.substring(
+                                        6,
+                                        8
+                                    ) + "日" + sch.start.substring(
+                                        8,
+                                        10
+                                    ) + ":" + sch.start.substring(10, 12)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                ) {
+                                    Text(
                                         modifier = Modifier
-                                            .fillMaxSize()
-                                    ) {
-                                        Text(
-                                            modifier = Modifier.padding(
+                                            .padding(
                                                 horizontal = 16.dp,
                                                 vertical = 8.dp
+                                            )
+                                            .sharedElement(
+                                                sharedContentState = rememberSharedContentState(
+                                                    key = "title-$scheduleId"
+                                                ),
+                                                animatedVisibilityScope = animatedVisibilityScope,
                                             ),
-                                            text = sch.title
-                                        )
-                                        Text(
-                                            modifier = Modifier.padding(
+                                        text = sch.title
+                                    )
+                                    Text(
+                                        modifier = Modifier
+                                            .padding(
                                                 horizontal = 16.dp,
                                                 vertical = 8.dp
+                                            )
+                                            .sharedElement(
+                                                sharedContentState = rememberSharedContentState(
+                                                    key = "time-$scheduleId"
+                                                ),
+                                                animatedVisibilityScope = animatedVisibilityScope
                                             ),
-                                            text = sch.start
-                                        )
-                                        HorizontalDivider(thickness = 2.dp)
+                                        text = format_time
+                                    )
+                                    if (contentVisible) {
+                                        HorizontalDivider(thickness = 1.dp)
                                         Text(
                                             modifier = Modifier.padding(
                                                 horizontal = 16.dp,
@@ -166,6 +196,7 @@ fun ScheduleInfoScreen(
                                     }
                                 }
                             }
+                            //}
                         }
                     }
                     AnimatedVisibility(
