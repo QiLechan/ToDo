@@ -16,7 +16,7 @@ data class Schedule (
     val start: String,
     val end: String,
     val allday: Boolean,
-    val alarm: Boolean,
+    var alarm: Boolean,
     val noticeTimes: String, // 存储为逗号分隔的字符串，例如 "0,1,2"
 )
 
@@ -36,4 +36,22 @@ interface ScheduleDao {
 
     @Query("SELECT * FROM Schedule WHERE id = :id")
     suspend fun getById(id: Int): Schedule?
+}
+
+suspend fun saveSchedule(db: AppDatabase, name: String, allDay: Boolean, alarm: Boolean, start: String, end: String, description: String, noticeTimes: List<Int>) {
+    db.scheduleDao().insert(
+        schedule = Schedule(
+            title = name,
+            description = description,
+            start = start,
+            end = end,
+            allday = allDay,
+            alarm = alarm,
+            noticeTimes = noticeTimes.joinToString(",")
+        )
+    )
+}
+
+suspend fun editSchedule(db: AppDatabase, schedule: Schedule) {
+    db.scheduleDao().update(schedule)
 }

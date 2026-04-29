@@ -35,8 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.yuezhikong.todo.DBViewModel
-import org.yuezhikong.todo.database.AppDatabase
-import org.yuezhikong.todo.database.Schedule
+import org.yuezhikong.todo.database.saveSchedule
 import org.yuezhikong.todo.ui.widget.ChooseWidget
 import org.yuezhikong.todo.ui.widget.DatePickerWidget
 import org.yuezhikong.todo.ui.widget.SwitchWidget
@@ -72,7 +71,7 @@ fun AddScreen(
                 FloatingActionButton(
                     onClick = {
                         scope.launch {
-                            saveToDo(db, name, allDay, alarm, start, end, description, noticeTimes)
+                            saveSchedule(db, name, allDay, alarm, start, end, description, noticeTimes)
                         }
                         backStack.removeLastOrNull()
                     },
@@ -208,19 +207,5 @@ fun OptionItem(
         trailingContent = {
             if (selected) { Icon(Icons.Default.Check, contentDescription = "Selected") }
         },
-    )
-}
-
-suspend fun saveToDo(db: AppDatabase, name: String, allDay: Boolean, alarm: Boolean, start: String, end: String, description: String, noticeTimes: List<Int>) {
-    db.scheduleDao().insert(
-        schedule = Schedule(
-            title = name,
-            description = description,
-            start = start,
-            end = end,
-            allday = allDay,
-            alarm = alarm,
-            noticeTimes = noticeTimes.joinToString(",")
-        )
     )
 }
