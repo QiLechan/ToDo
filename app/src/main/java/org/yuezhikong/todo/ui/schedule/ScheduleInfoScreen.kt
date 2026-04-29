@@ -62,6 +62,12 @@ fun ScheduleInfoScreen(
     var alarmEnabled by remember { mutableStateOf(false) }
     var cardVisible by remember { mutableStateOf(true) }
     var rowVisible by remember { mutableStateOf(true) }
+    var contentVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(150)
+        contentVisible = true
+    }
 
     LaunchedEffect(scheduleId) {
         schedule = dbvm.getDataBase().scheduleDao().getById(scheduleId.toInt())
@@ -111,48 +117,53 @@ fun ScheduleInfoScreen(
                                     animatedVisibilityScope = animatedVisibilityScope,
                                 )
                         ) {
-                            schedule?.let { sch ->
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                ) {
-                                    Text(
-                                        modifier = Modifier.padding(
-                                            horizontal = 16.dp,
-                                            vertical = 8.dp
-                                        ),
-                                        text = sch.title
-                                    )
-                                    Text(
-                                        modifier = Modifier.padding(
-                                            horizontal = 16.dp,
-                                            vertical = 8.dp
-                                        ),
-                                        text = sch.start
-                                    )
-                                    HorizontalDivider(thickness = 2.dp)
-                                    Text(
-                                        modifier = Modifier.padding(
-                                            horizontal = 16.dp,
-                                            vertical = 8.dp
-                                        ),
-                                        text = sch.description
-                                    )
-                                    ChooseWidget("提醒") {
+                            if (contentVisible) {
+                                schedule?.let { sch ->
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                    ) {
+                                        Text(
+                                            modifier = Modifier.padding(
+                                                horizontal = 16.dp,
+                                                vertical = 8.dp
+                                            ),
+                                            text = sch.title
+                                        )
+                                        Text(
+                                            modifier = Modifier.padding(
+                                                horizontal = 16.dp,
+                                                vertical = 8.dp
+                                            ),
+                                            text = sch.start
+                                        )
+                                        HorizontalDivider(thickness = 2.dp)
+                                        Text(
+                                            modifier = Modifier.padding(
+                                                horizontal = 16.dp,
+                                                vertical = 8.dp
+                                            ),
+                                            text = sch.description
+                                        )
+                                        ChooseWidget("提醒") {
 
-                                    }
-                                    SwitchWidget(
-                                        title = "闹钟",
-                                        checked = alarmEnabled,
-                                        onCheckedChange = { checked ->
-                                            alarmEnabled = checked
-                                            val updatedSchedule = sch.copy(alarm = checked)
-                                            schedule = updatedSchedule
-                                            scope.launch {
-                                                editSchedule(dbvm.getDataBase(), updatedSchedule)
-                                            }
                                         }
-                                    )
+                                        SwitchWidget(
+                                            title = "闹钟",
+                                            checked = alarmEnabled,
+                                            onCheckedChange = { checked ->
+                                                alarmEnabled = checked
+                                                val updatedSchedule = sch.copy(alarm = checked)
+                                                schedule = updatedSchedule
+                                                scope.launch {
+                                                    editSchedule(
+                                                        dbvm.getDataBase(),
+                                                        updatedSchedule
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
