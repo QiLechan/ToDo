@@ -16,7 +16,7 @@ data class Schedule (
     val start: String,
     val end: String,
     val allday: Boolean,
-    var alarm: Boolean,
+    val alarm: Boolean,
     val noticeTimes: String, // 存储为逗号分隔的字符串，例如 "0,1,2"
 )
 

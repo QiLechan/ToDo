@@ -60,6 +60,8 @@ fun ScheduleInfoScreen(
     var schedule by remember { mutableStateOf<Schedule?>(null) }
     var alarmEnabled by remember { mutableStateOf(false) }
     var cardVisible by remember { mutableStateOf(true) }
+    var topBarVisible by remember { mutableStateOf(true) }
+    var rowVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(scheduleId) {
         schedule = dbvm.getDataBase().scheduleDao().getById(scheduleId.toInt())
@@ -69,17 +71,25 @@ fun ScheduleInfoScreen(
     with(sharedTransitionScope) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text(text = "日程详情") },
-                    navigationIcon = {
-                        IconButton(onClick = onBackPressed) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "返回"
-                            )
+                AnimatedVisibility(
+                    visible = topBarVisible,
+                    exit = slideOutVertically(
+                        targetOffsetY = { -it },
+                        animationSpec = tween(300)
+                    ) + fadeOut(animationSpec = tween(300))
+                ) {
+                    TopAppBar(
+                        title = { Text(text = "日程详情") },
+                        navigationIcon = {
+                            IconButton(onClick = onBackPressed) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "返回"
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             Box(
@@ -97,90 +107,101 @@ fun ScheduleInfoScreen(
                             targetOffsetY = { -it },
                             animationSpec = tween(300)
                         ) + fadeOut(animationSpec = tween(300))
-                    ){
-                        Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(600.dp)
-                            .padding(32.dp)
-                            .sharedElement(
-                                sharedContentState = rememberSharedContentState(key = "card-$scheduleId"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
                     ) {
-                        schedule?.let { sch ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                            ) {
-                                Text(
-                                    modifier = Modifier.padding(
-                                        horizontal = 16.dp,
-                                        vertical = 8.dp
-                                    ),
-                                    text = sch.title
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(600.dp)
+                                .padding(32.dp)
+                                .sharedElement(
+                                    sharedContentState = rememberSharedContentState(key = "card-$scheduleId"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
                                 )
-                                Text(
-                                    modifier = Modifier.padding(
-                                        horizontal = 16.dp,
-                                        vertical = 8.dp
-                                    ),
-                                    text = sch.start
-                                )
-                                HorizontalDivider(thickness = 2.dp)
-                                Text(
-                                    modifier = Modifier.padding(
-                                        horizontal = 16.dp,
-                                        vertical = 8.dp
-                                    ),
-                                    text = sch.description
-                                )
-                                ChooseWidget("提醒") {
+                        ) {
+                            schedule?.let { sch ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                ) {
+                                    Text(
+                                        modifier = Modifier.padding(
+                                            horizontal = 16.dp,
+                                            vertical = 8.dp
+                                        ),
+                                        text = sch.title
+                                    )
+                                    Text(
+                                        modifier = Modifier.padding(
+                                            horizontal = 16.dp,
+                                            vertical = 8.dp
+                                        ),
+                                        text = sch.start
+                                    )
+                                    HorizontalDivider(thickness = 2.dp)
+                                    Text(
+                                        modifier = Modifier.padding(
+                                            horizontal = 16.dp,
+                                            vertical = 8.dp
+                                        ),
+                                        text = sch.description
+                                    )
+                                    ChooseWidget("提醒") {
 
-                                }
-                                SwitchWidget(
-                                    title = "闹钟",
-                                    checked = alarmEnabled,
-                                    onCheckedChange = { checked ->
-                                        alarmEnabled = checked
-                                        val updatedSchedule = sch.copy(alarm = checked)
-                                        schedule = updatedSchedule
-                                        scope.launch {
-                                            editSchedule(dbvm.getDataBase(), updatedSchedule)
-                                        }
                                     }
-                                )
+                                    SwitchWidget(
+                                        title = "闹钟",
+                                        checked = alarmEnabled,
+                                        onCheckedChange = { checked ->
+                                            alarmEnabled = checked
+                                            val updatedSchedule = sch.copy(alarm = checked)
+                                            schedule = updatedSchedule
+                                            scope.launch {
+                                                editSchedule(dbvm.getDataBase(), updatedSchedule)
+                                            }
+                                        }
+                                    )
+                                }
                             }
                         }
-                    }}
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(
-                            48.dp,
-                            Alignment.CenterHorizontally
-                        )
+                    }
+                    AnimatedVisibility(
+                        visible = rowVisible,
+                        exit = slideOutVertically(
+                            targetOffsetY = { it },
+                            animationSpec = tween(300)
+                        ) + fadeOut(animationSpec = tween(300))
                     ) {
-                        FloatingActionButton(
-                            onClick = {},
-                            shape = CircleShape
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                48.dp,
+                                Alignment.CenterHorizontally
+                            )
                         ) {
-                            Icon(Icons.Filled.Edit, "修改")
-                        }
-                        FloatingActionButton(
-                            onClick = {
-                                cardVisible = false
-                                scope.launch {
-                                    delay(300)
-                                    schedule?.let {
-                                        dbvm.getDataBase().scheduleDao().delete(it)
+                            FloatingActionButton(
+                                onClick = {},
+                                shape = CircleShape
+                            ) {
+                                Icon(Icons.Filled.Edit, "修改")
+                            }
+                            FloatingActionButton(
+                                onClick = {
+                                    cardVisible = false
+                                    rowVisible = false
+                                    topBarVisible = false
+                                    scope.launch {
+                                        delay(320)
+                                        schedule?.let {
+                                            dbvm.getDataBase().scheduleDao().delete(it)
+                                        }
+                                        onBackPressed()
                                     }
-                                    onBackPressed()
-                                }
-                            },
-                            shape = CircleShape
-                        ) {
-                            Icon(Icons.Filled.Delete, "删除")
+                                },
+                                shape = CircleShape
+                            ) {
+                                Icon(Icons.Filled.Delete, "删除")
+                            }
                         }
                     }
                 }
