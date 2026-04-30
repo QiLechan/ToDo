@@ -139,7 +139,8 @@ fun AddScreen(
                                     }
                                 }
                                          },
-                            current = noticeTimes)
+                            current = noticeTimes,
+                            onChange = {})
                     }
                     if (0 !in noticeTimes) {
                         SwitchWidget(
@@ -169,25 +170,31 @@ fun AddScreen(
 }
 
 @Composable
-fun NoticeSettings(current: SnapshotStateList<Int>, noticetime: (Int) -> Unit = {} ) {
+fun NoticeSettings(current: SnapshotStateList<Int>, noticetime: (Int) -> Unit = {},onChange: () -> Unit ) {
     Column {
         OptionItem("无提醒", selected = 0 in current) {
             noticetime(0)
+            onChange()
         }
         OptionItem("日程开始时", selected = 1 in current) {
             noticetime(1)
+            onChange()
         }
         OptionItem("日程前5分钟", selected = 2 in current) {
             noticetime(2)
+            onChange()
         }
         OptionItem("日程前15分钟", selected = 3 in current) {
             noticetime(3)
+            onChange()
         }
         OptionItem("日程前30分钟", selected = 4 in current) {
             noticetime(4)
+            onChange()
         }
         OptionItem("日程前1小时", selected = 5 in current) {
             noticetime(5)
+            onChange()
         }
     }
 }

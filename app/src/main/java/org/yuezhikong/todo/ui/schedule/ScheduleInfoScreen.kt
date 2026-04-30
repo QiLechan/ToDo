@@ -3,9 +3,7 @@ package org.yuezhikong.todo.ui.schedule
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -46,8 +45,17 @@ import kotlinx.coroutines.launch
 import org.yuezhikong.todo.DBViewModel
 import org.yuezhikong.todo.database.Schedule
 import org.yuezhikong.todo.database.editSchedule
+import org.yuezhikong.todo.ui.add.NoticeSettings
 import org.yuezhikong.todo.ui.widget.ChooseWidget
 import org.yuezhikong.todo.ui.widget.SwitchWidget
+
+private fun parseNoticeTimes(raw: String): List<Int> {
+    return raw
+        .removePrefix("[")
+        .removeSuffix("]")
+        .split(",")
+        .mapNotNull { it.trim().toIntOrNull() }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -175,8 +183,37 @@ fun ScheduleInfoScreen(
                                             ),
                                             text = sch.description
                                         )
+                                        val noticeTimes = remember(sch.noticeTimes) {
+                                            parseNoticeTimes(sch.noticeTimes).toMutableStateList()
+                                        }
                                         ChooseWidget("提醒") {
-
+                                            NoticeSettings(
+                                                current = noticeTimes,
+                                                noticetime = {
+                                                    if (it == 0){
+                                                        noticeTimes.clear()
+                                                        noticeTimes.add(0)
+                                                    }
+                                                    else {
+                                                        if (it in noticeTimes) {
+                                                            noticeTimes.remove(it)
+                                                        } else {
+                                                            noticeTimes.remove(0)
+                                                            noticeTimes.add(it)
+                                                        }
+                                                    }
+                                                },
+                                                onChange = {
+                                                    val updatedSchedule = sch.copy(noticeTimes = noticeTimes.joinToString(","))
+                                                    schedule = updatedSchedule
+                                                    scope.launch {
+                                                        editSchedule(
+                                                            dbvm.getDataBase(),
+                                                            updatedSchedule
+                                                        )
+                                                    }
+                                                }
+                                            )
                                         }
                                         SwitchWidget(
                                             title = "闹钟",
