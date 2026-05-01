@@ -71,14 +71,21 @@ fun AddScreen(
             with(sharedTransitionScope) {
                 FloatingActionButton(
                     onClick = {
-                        if (name.isNotBlank()) {
+                        val error = when {
+                            name.isBlank() -> "标题不能为空"
+                            start.isBlank() -> "请选择开始时间"
+                            end.isBlank() -> "请选择结束时间"
+                            start > end -> "结束时间必须在开始时间之后"
+                            else -> null
+                        }
+                        if (error == null) {
                             scope.launch {
                                 saveSchedule(db, name, allDay, alarm, start, end, description, noticeTimes)
                                 backStack.removeLastOrNull()
                             }
                         }
                         else {
-                            Toast.makeText(context, "标题不能为空", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier
