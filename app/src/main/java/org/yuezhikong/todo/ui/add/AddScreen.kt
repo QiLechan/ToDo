@@ -1,5 +1,6 @@
 package org.yuezhikong.todo.ui.add
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
@@ -70,10 +71,22 @@ fun AddScreen(
             with(sharedTransitionScope) {
                 FloatingActionButton(
                     onClick = {
-                        scope.launch {
-                            saveSchedule(db, name, allDay, alarm, start, end, description, noticeTimes)
+                        val error = when {
+                            name.isBlank() -> "标题不能为空"
+                            start.isBlank() -> "请选择开始时间"
+                            end.isBlank() -> "请选择结束时间"
+                            start > end -> "结束时间必须在开始时间之后"
+                            else -> null
                         }
-                        backStack.removeLastOrNull()
+                        if (error == null) {
+                            scope.launch {
+                                saveSchedule(db, name, allDay, alarm, start, end, description, noticeTimes)
+                                backStack.removeLastOrNull()
+                            }
+                        }
+                        else {
+                            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                        }
                     },
                     modifier = Modifier
                         .sharedElement(
@@ -170,7 +183,9 @@ fun AddScreen(
 }
 
 @Composable
-fun NoticeSettings(current: SnapshotStateList<Int>, noticetime: (Int) -> Unit = {},onChange: () -> Unit ) {
+fun NoticeSettings(current: SnapshotStateList<Int>,
+                   noticetime: (Int) -> Unit = {},
+                   onChange: () -> Unit ) {
     Column {
         OptionItem("无提醒", selected = 0 in current) {
             noticetime(0)
