@@ -75,6 +75,7 @@ fun AddScreen(
                             name.isBlank() -> "标题不能为空"
                             start.isBlank() -> "请选择开始时间"
                             end.isBlank() -> "请选择结束时间"
+                            start == "input_error" -> "时间格式错误"
                             else -> {
                                 val sNum = start.toLongOrNull()
                                 val eNum = end.toLongOrNull()

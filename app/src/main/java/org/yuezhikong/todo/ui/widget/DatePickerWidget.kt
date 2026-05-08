@@ -119,8 +119,15 @@ fun DatePickerWidget(
                 else -> false
             }
         } else {
-            input_error = false
+            input_error = true
         }
+    }
+    LaunchedEffect(input_error) {
+        if (input_error)
+            onDateSelected("input_error")
+        else
+            onDateSelected(dateInput)
+
     }
 
     Row(
