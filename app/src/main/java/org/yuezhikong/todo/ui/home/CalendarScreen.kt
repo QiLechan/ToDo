@@ -27,6 +27,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.yuezhikong.todo.database.Schedule
 import org.yuezhikong.todo.ui.calendar.Day
 import org.yuezhikong.todo.ui.calendar.Month
 import org.yuezhikong.todo.ui.calendar.Week
@@ -53,6 +54,8 @@ fun CalendarScreen() {
         }
     }
     val listState = rememberLazyListState()
+
+    val markList by remember { mutableStateOf<List<Int>>(emptyList()) }
 
     LaunchedEffect(listState) {
         var lastOffset = 0
@@ -111,7 +114,8 @@ fun CalendarScreen() {
                         Week(
                             date.with(DayOfWeek.MONDAY).dayOfMonth,
                             date.with(DayOfWeek.SUNDAY).dayOfMonth,
-                            selectedDay
+                            selectedDay,
+                            markList
                         ) {
                             selectedDay = it
                         }
@@ -125,6 +129,7 @@ fun CalendarScreen() {
                             Month(
                                 today.plusMonths(page - centerPage.toLong()),
                                 selectedDay,
+                                markList,
                                 onValueChange = { selectedDay = it }
                             )
                         }
