@@ -38,6 +38,12 @@ interface ScheduleDao {
 
     @Query("SELECT * FROM Schedule WHERE id = :id")
     suspend fun getById(id: Int): Schedule?
+
+    @Query("SELECT * FROM Schedule WHERE start_date >= :startDate AND start_date <= :endDate")
+    suspend fun getByStartDateRange(startDate: Int, endDate: Int): List<Schedule>
+
+    @Query("SELECT * FROM Schedule WHERE start_date = :start_date")
+    suspend fun getByStartDate(start_date: Int): List<Schedule>
 }
 
 suspend fun saveSchedule(db: AppDatabase,

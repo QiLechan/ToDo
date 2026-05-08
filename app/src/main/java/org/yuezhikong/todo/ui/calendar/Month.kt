@@ -142,7 +142,7 @@ fun Day(day: Int, selected: Int, modifier: Modifier = Modifier, marked: Boolean 
                     text = day.toString(),
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .onGloballyPositioned{
+                        .onGloballyPositioned {
                             targetY = it.positionInParent().y.toInt()
                         },
                     color = if (!isSelected) {
@@ -152,15 +152,21 @@ fun Day(day: Int, selected: Int, modifier: Modifier = Modifier, marked: Boolean 
                     }
                 )
             }
-            Text(
-                text = "·",
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset{
-                        IntOffset(0,targetY + 50)
-                    },
-                color = if (!isSelected){ MaterialTheme.colorScheme.onBackground } else { MaterialTheme.colorScheme.onPrimary }
-            )
+            if (marked){
+                Text(
+                    text = "·",
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .offset {
+                            IntOffset(0, targetY + 50)
+                        },
+                    color = if (!isSelected) {
+                        MaterialTheme.colorScheme.onBackground
+                    } else {
+                        MaterialTheme.colorScheme.onPrimary
+                    }
+                )
+            }
         }
     }
 }
