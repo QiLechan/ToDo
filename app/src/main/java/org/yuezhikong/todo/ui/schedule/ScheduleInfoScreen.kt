@@ -48,6 +48,7 @@ import org.yuezhikong.todo.database.editSchedule
 import org.yuezhikong.todo.ui.add.NoticeSettings
 import org.yuezhikong.todo.ui.widget.ChooseWidget
 import org.yuezhikong.todo.ui.widget.SwitchWidget
+import androidx.compose.ui.platform.LocalLocale
 
 private fun parseNoticeTimes(raw: String): List<Int> {
     return raw
@@ -131,17 +132,18 @@ fun ScheduleInfoScreen(
 //                                enter = fadeIn(animationSpec = tween(300))
 //                            ) {
                             schedule?.let { sch ->
+                                // build a yyyyMMddHHmm string from start_date and start_time ints
+                                val dateStr = String.format(LocalLocale.current.platformLocale, "%08d", sch.start_date)
+                                val timeStr = String.format(LocalLocale.current.platformLocale, "%04d", sch.start_time)
+                                val combined = dateStr + timeStr
                                 val format_time =
-                                    sch.start.substring(0, 4) + "年" + sch.start.substring(
-                                        4,
-                                        6
-                                    ) + "月" + sch.start.substring(
+                                    combined.substring(0, 4) + "年" + combined.substring(4, 6) + "月" + combined.substring(
                                         6,
                                         8
-                                    ) + "日" + sch.start.substring(
+                                    ) + "日" + combined.substring(
                                         8,
                                         10
-                                    ) + ":" + sch.start.substring(10, 12)
+                                    ) + ":" + combined.substring(10, 12)
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize()

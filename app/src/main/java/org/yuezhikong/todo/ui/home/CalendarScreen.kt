@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,7 +26,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.yuezhikong.todo.database.Schedule
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.yuezhikong.todo.DBViewModel
 import org.yuezhikong.todo.ui.calendar.Day
 import org.yuezhikong.todo.ui.calendar.Month
 import org.yuezhikong.todo.ui.calendar.Week
@@ -54,8 +54,26 @@ fun CalendarScreen() {
         }
     }
     val listState = rememberLazyListState()
+    var markedList by remember { mutableStateOf<List<Int>>(emptyList()) }
+    val dbvm: DBViewModel = viewModel()
 
-    val markList by remember { mutableStateOf<List<Int>>(emptyList()) }
+    LaunchedEffect(currentDisplayDate) {
+        markedList = emptyList()
+        val currentYear = currentDisplayDate.year
+        val currentMonth = currentDisplayDate.monthValue
+        val days = currentDisplayDate.lengthOfMonth()
+        val start = (currentYear.toString() + currentMonth.toString().padStart(2, '0') + "01").toInt()
+        val end = start + days - 1
+        val monthScheduleList = dbvm.getByStartDateRange(start, end)
+
+        for (day in monthScheduleList){
+            day.start_date.toString().takeLast(2).toIntOrNull()?.let {
+                if (it in 1..days) {
+                    markedList = markedList + it
+                }
+            }
+        }
+    }
 
     LaunchedEffect(listState) {
         var lastOffset = 0
@@ -115,7 +133,7 @@ fun CalendarScreen() {
                             date.with(DayOfWeek.MONDAY).dayOfMonth,
                             date.with(DayOfWeek.SUNDAY).dayOfMonth,
                             selectedDay,
-                            markList
+                            markedList
                         ) {
                             selectedDay = it
                         }
@@ -129,7 +147,7 @@ fun CalendarScreen() {
                             Month(
                                 today.plusMonths(page - centerPage.toLong()),
                                 selectedDay,
-                                markList,
+                                markedList,
                                 onValueChange = { selectedDay = it }
                             )
                         }

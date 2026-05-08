@@ -43,6 +43,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import org.yuezhikong.todo.database.AppDatabase
 import org.yuezhikong.todo.ui.add.AddScreen
@@ -80,6 +81,8 @@ class DBViewModel(application: Application) : AndroidViewModel(application) {
     fun getDataBase() = db
 
     suspend fun getAllSchedules() = db.scheduleDao().getAll()
+
+    suspend fun getByStartDateRange(start_date: Int, end_date: Int) = db.scheduleDao().getByStartDateRange(start_date,end_date)
 }
 
 val tabs = listOf(Tab.Home, Tab.Calendar, Tab.User)
