@@ -33,14 +33,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.yuezhikong.todo.Add
 import org.yuezhikong.todo.DBViewModel
 import org.yuezhikong.todo.ScheduleDetail
-import org.yuezhikong.todo.database.AppDatabase.Companion.getDatabase
+// ...existing code...
 import org.yuezhikong.todo.database.Schedule
 import org.yuezhikong.todo.ui.widget.ScheduleWidget
 import java.time.LocalDate
@@ -58,8 +57,7 @@ fun HomeScreen(
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val db = remember { getDatabase(context) }
+    // database instance is accessed via DBViewModel below; no local context/db needed
     val today = LocalDate.now()
     val tomorrow = today.plusDays(1)
 
@@ -70,9 +68,9 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         schedule = dbvm.getAllSchedules()
-        schedule = schedule.sortedBy { StringToTime(it.start) }
+        schedule = schedule.sortedBy { StringToTime(it.start_date, it.start_time) }
         for (item in schedule){
-            when (StringToTime(item.start).toLocalDate()) {
+            when (StringToTime(item.start_date, item.start_time).toLocalDate()) {
                 today -> todayList = todayList + item
                 tomorrow -> tomorrowList = tomorrowList + item
             }
@@ -187,15 +185,16 @@ fun ScheduleList(
 ) {
     LazyColumn(modifier = modifier) {
         items(items = schedule, key = { it.id }) { item ->
-            ScheduleWidget(item.title, item.start, item.id, sharedTransitionScope, animatedVisibilityScope) {
+            val timeStr = String.format(java.util.Locale.ROOT, "%08d%04d", item.start_date, item.start_time)
+            ScheduleWidget(item.title, timeStr, item.id, sharedTransitionScope, animatedVisibilityScope) {
                 onOpenDetail(item.id.toString())
             }
         }
     }
 }
 
-fun StringToTime(str: String): LocalDateTime {
+fun StringToTime(date: Int, time: Int): LocalDateTime {
+    val combined = String.format(java.util.Locale.ROOT, "%08d%04d", date, time)
     val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
-    val dateTime = LocalDateTime.parse(str, formatter)
-    return dateTime
+    return LocalDateTime.parse(combined, formatter)
 }

@@ -75,12 +75,36 @@ fun AddScreen(
                             name.isBlank() -> "标题不能为空"
                             start.isBlank() -> "请选择开始时间"
                             end.isBlank() -> "请选择结束时间"
-                            start > end -> "结束时间必须在开始时间之后"
-                            else -> null
+                            else -> {
+                                val sNum = start.toLongOrNull()
+                                val eNum = end.toLongOrNull()
+                                if (sNum == null || eNum == null) "时间格式不正确"
+                                else if (sNum > eNum) "结束时间必须在开始时间之后"
+                                else null
+                            }
                         }
                         if (error == null) {
                             scope.launch {
-                                saveSchedule(db, name, allDay, alarm, start, end, description, noticeTimes)
+                                // parse start/end (expected 12-digit string: yyyyMMddHHmm) into date and time ints
+                                val sNum = start.takeIf { it.length == 12 }
+                                val eNum = end.takeIf { it.length == 12 }
+                                val startDate = sNum?.substring(0, 8)?.toIntOrNull() ?: 0
+                                val startTime = sNum?.substring(8, 12)?.toIntOrNull() ?: 0
+                                val endDate = eNum?.substring(0, 8)?.toIntOrNull() ?: 0
+                                val endTime = eNum?.substring(8, 12)?.toIntOrNull() ?: 0
+
+                                saveSchedule(
+                                    db,
+                                    name,
+                                    allDay,
+                                    alarm,
+                                    startDate,
+                                    startTime,
+                                    endDate,
+                                    endTime,
+                                    description,
+                                    noticeTimes.toList()
+                                )
                                 backStack.removeLastOrNull()
                             }
                         }
