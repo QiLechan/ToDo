@@ -21,12 +21,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import org.yuezhikong.todo.DBViewModel
 import org.yuezhikong.todo.ui.calendar.Day
 import org.yuezhikong.todo.ui.calendar.Month
@@ -56,6 +58,7 @@ fun CalendarScreen() {
     val listState = rememberLazyListState()
     var markedList by remember { mutableStateOf<List<Int>>(emptyList()) }
     val dbvm: DBViewModel = viewModel()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(currentDisplayDate) {
         markedList = emptyList()
@@ -128,14 +131,28 @@ fun CalendarScreen() {
                     label = ""
                 ) { isCollapsed ->
                     if (isCollapsed) {
-                        val date = LocalDate.of(currentDisplayDate.year, currentDisplayDate.month, selectedDay)
+                        val date by remember { mutableStateOf(LocalDate.of(currentDisplayDate.year, currentDisplayDate.month, selectedDay)) }
+                        var isMonthChanged by remember { mutableStateOf(false) }
                         Week(
                             date.with(DayOfWeek.MONDAY).dayOfMonth,
                             date.with(DayOfWeek.SUNDAY).dayOfMonth,
                             selectedDay,
-                            markedList
-                        ) {
-                            selectedDay = it
+                            markedList,
+                            isMonthChanged = { isMonthChanged = it },
+                        ){
+                            if (isMonthChanged) {
+                                if (it > 7) {
+                                    date.minusMonths(1)
+                                    scope.launch { pagerState.scrollToPage(pagerState.currentPage - 1) }
+                                    selectedDay = it
+                                } else {
+                                    date.plusMonths(1)
+                                    scope.launch { pagerState.scrollToPage(pagerState.currentPage + 1) }
+                                    selectedDay = it
+                                }
+                            }
+                            else
+                                selectedDay = it
                         }
                     } else {
                         HorizontalPager(

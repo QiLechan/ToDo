@@ -79,13 +79,15 @@ fun Week(start: Int, end: Int, weekday: Int, selected: Int, markedList: List<Int
  * @param onValueChange 日期变化时的回调函数
  */
 @Composable
-fun Week(start: Int, end: Int, selected: Int, markedList: List<Int>, onValueChange: (Int) -> Unit) {
+fun Week(start: Int, end: Int, selected: Int, markedList: List<Int>, isMonthChanged: (Boolean) -> Unit, onValueChange: (Int) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth()) {
         if (start < end){
+            isMonthChanged(false)
             for (day in start..end) {
                 Day(day, selected, Modifier.weight(1f), day in markedList, onValueChange)
             }
         } else{
+            isMonthChanged(true)
             var e = end
             var i = 0
             while (e >= 1) {
