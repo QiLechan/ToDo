@@ -83,6 +83,8 @@ class DBViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun getAllSchedules() = db.scheduleDao().getAll()
 
     suspend fun getByStartDateRange(start_date: Int, end_date: Int) = db.scheduleDao().getByStartDateRange(start_date,end_date)
+
+    suspend fun  getByStartDate(start_date: Int) = db.scheduleDao().getByStartDate(start_date)
 }
 
 val tabs = listOf(Tab.Home, Tab.Calendar, Tab.User)
@@ -173,7 +175,11 @@ fun MainPage(
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
-                Tab.Calendar -> CalendarScreen()
+                Tab.Calendar -> CalendarScreen(
+                    backStack = backStack,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
                 Tab.User -> UserScreen()
             }
         }

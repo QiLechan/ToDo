@@ -1,15 +1,25 @@
 package org.yuezhikong.todo.ui.home
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -23,25 +33,31 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.yuezhikong.todo.DBViewModel
+import org.yuezhikong.todo.ScheduleDetail
+import org.yuezhikong.todo.database.Schedule
 import org.yuezhikong.todo.ui.calendar.Day
 import org.yuezhikong.todo.ui.calendar.Month
 import org.yuezhikong.todo.ui.calendar.Week
+import org.yuezhikong.todo.ui.widget.ScheduleWidget
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-@Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen() {
+fun CalendarScreen(
+    backStack: SnapshotStateList<Any>,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+) {
     var selectedDay by remember { mutableIntStateOf(0) }
     var collapsed by remember { mutableStateOf(false) }
+    var selectedDayList by remember { mutableStateOf<List<Schedule>>(emptyList()) }
     val dummyPageCount = Int.MAX_VALUE
     val centerPage = dummyPageCount / 2
     val today = LocalDate.now()
@@ -56,6 +72,48 @@ fun CalendarScreen() {
         }
     }
     val listState = rememberLazyListState()
+    val nestedScrollConnection = remember(collapsed, listState) {
+        object : NestedScrollConnection {
+            var accumulated = 0f
+            var lastDirection = 0
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val dy = available.y
+                if (dy == 0f) return Offset.Zero
+
+                val direction = if (dy > 0f) 1 else -1
+                if (direction != lastDirection) {
+                    accumulated = 0f
+                    lastDirection = direction
+                }
+
+                // 向上滑列表时：折叠为周视图
+                if (!collapsed && dy < 0f) {
+                    accumulated += -dy
+                    if (accumulated > 60f) {
+                        collapsed = true
+                        accumulated = 0f
+                        return Offset(0f, dy)
+                    }
+                    return Offset.Zero
+                }
+
+                // 当已折叠且列表在顶部时：继续下拉展开为月视图
+                if (collapsed && listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 && dy > 0f) {
+                    accumulated += dy
+                    if (accumulated > 60f) {
+                        collapsed = false
+                        accumulated = 0f
+                        return Offset(0f, dy)
+                    }
+                    return Offset.Zero
+                }
+
+                // 其它情况清零，避免方向切换后误触发
+                accumulated = 0f
+                return Offset.Zero
+            }
+        }
+    }
     var markedList by remember { mutableStateOf<List<Int>>(emptyList()) }
     val dbvm: DBViewModel = viewModel()
     val scope = rememberCoroutineScope()
@@ -78,33 +136,10 @@ fun CalendarScreen() {
         }
     }
 
-    LaunchedEffect(listState) {
-        var lastOffset = 0
-        var lastIndex = 0
-
-        snapshotFlow {
-            listState.firstVisibleItemIndex to
-                    listState.firstVisibleItemScrollOffset
-        }.collect { (index, offset) ->
-            val isScrollingDown =
-                index > lastIndex ||
-                        (index == lastIndex && offset > lastOffset)
-            val isScrollingUp =
-                index < lastIndex ||
-                        (index == lastIndex && offset < lastOffset)
-
-            if (isScrollingDown) {
-                collapsed = true
-            }
-            if (isScrollingUp &&
-                index == 0 &&
-                offset < 10
-            ) {
-                collapsed = false
-            }
-            lastIndex = index
-            lastOffset = offset
-        }
+    LaunchedEffect(selectedDay) {
+        val date = LocalDate.of(currentDisplayDate.year, currentDisplayDate.month, selectedDay)
+        val dateInt = date.year * 10000 + date.monthValue * 100 + date.dayOfMonth
+        selectedDayList = dbvm.getByStartDate(dateInt)
     }
 
     Scaffold(
@@ -160,6 +195,27 @@ fun CalendarScreen() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(300.dp)
+                                .pointerInput(collapsed) {
+                                    if (!collapsed) {
+                                        var totalDrag = 0f
+                                        detectVerticalDragGestures(
+                                            onVerticalDrag = { change, dragAmount ->
+                                                totalDrag += dragAmount
+                                                if (totalDrag < -60f) {
+                                                    collapsed = true
+                                                    totalDrag = 0f
+                                                }
+                                                change.consume()
+                                            },
+                                            onDragEnd = {
+                                                totalDrag = 0f
+                                            },
+                                            onDragCancel = {
+                                                totalDrag = 0f
+                                            }
+                                        )
+                                    }
+                                }
                         ) { page ->
                             Month(
                                 today.plusMonths(page - centerPage.toLong()),
@@ -170,21 +226,36 @@ fun CalendarScreen() {
                         }
                     }
                 }
-                LazyColumn(
+                ScheduleList(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                    state = listState
-                ) {
-                    items(20) { index ->
-                        Text(
-                            text = "日程 $index",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        )
-                    }
-                }
+                        .nestedScroll(nestedScrollConnection),
+                        //.weight(1f),
+                    schedule = selectedDayList,
+                    onOpenDetail = { scheduleId -> backStack.add(ScheduleDetail(scheduleId)) },
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    listState = listState
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ScheduleList(
+    modifier: Modifier = Modifier,
+    schedule: List<Schedule>,
+    onOpenDetail: (String) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    listState: LazyListState
+) {
+    LazyColumn(modifier = modifier, state = listState) {
+        items(items = schedule, key = { it.id }) { item ->
+            val timeStr = String.format(java.util.Locale.ROOT, "%08d%04d", item.start_date, item.start_time)
+            ScheduleWidget(item.title, timeStr, item.id, sharedTransitionScope, animatedVisibilityScope) {
+                onOpenDetail(item.id.toString())
             }
         }
     }

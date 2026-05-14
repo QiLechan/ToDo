@@ -57,7 +57,6 @@ fun HomeScreen(
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    // database instance is accessed via DBViewModel below; no local context/db needed
     val today = LocalDate.now()
     val tomorrow = today.plusDays(1)
 
